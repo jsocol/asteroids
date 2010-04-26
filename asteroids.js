@@ -52,6 +52,7 @@ var Asteroids = function(home) {
     // Useful functions.
     this.asteroids = Asteroids.asteroids(this);
     this.overlays = Asteroids.overlays(this);
+    this.highScores = Asteroids.highScores(this);
     this.level = Asteroids.level(this);
     this.gameOver = Asteroids.gameOver(this);
 
@@ -539,6 +540,10 @@ Asteroids.gameOver = function (game) {
     return function () {
         game.log.debug('Game over!');
 
+        if (game.player.getScore() > 0) {
+            game.highScores.addScore('Player', game.player.getScore());
+        }
+
         game.overlays.add({
             draw: function (ctx) {
                 ctx.font = '30px System, monospace';
@@ -546,8 +551,42 @@ Asteroids.gameOver = function (game) {
                 ctx.textBaseline = 'middle';
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.fillText('GAME OVER', GAME_WIDTH/2, GAME_HEIGHT/2);
+
+                var scores = game.highScores.getScores();
+                ctx.font = '12px System, monospace';
+                for (var i=0; i<scores.length; i++) {
+                    ctx.fillText(scores[i].name + '   ' + scores[i].score,
+                                 GAME_WIDTH/2, GAME_HEIGHT/2 + 20 + 14 * i);
+                }
             },
         });
+    }
+}
+
+Asteroids.highScores = function (game) {
+    var scores = [];
+
+    if (t = localStorage.getItem('high-scores')) {
+        scores = t.split(';;').map(function(s) {
+            var _s = s.split(';');
+            return {name: _s[0], score: _s[1]};
+        });
+    }
+    
+    return {
+        getScores: function() {
+            return scores;
+        },
+        addScore: function(_name, _score) {
+            scores.push({name: _name, score: _score});
+            scores.sort(function(a, b){ return b.score - a.score; });
+            if (scores.length > 10) {
+                scores.length = 10;
+            }
+            game.log.debug('Saving high scores.');
+            var str = [x.name+';'+x.score for each (x in scores)].join(';;')
+            localStorage.setItem('high-scores', str);
+        },
     }
 }
 
