@@ -6,6 +6,7 @@
 GAME_HEIGHT = 480;
 GAME_WIDTH = 640;
 FRAME_PERIOD = 60; // 1 frame / x frames/sec
+LEVEL_TIMEOUT = 2000; // How long to wait after clearing a level.
 
 // Player settings
 ROTATE_SPEED = Math.PI/10; // How fast do players turn?  (radians)
@@ -21,7 +22,7 @@ MAX_BULLETS = 3;
 MAX_BULLET_AGE = 25;
 
 // Asteroid settings
-ASTEROID_COUNT = 3; // How many do we start with?
+ASTEROID_COUNT = 2; // This + current level = number of asteroids.
 ASTEROID_GENERATIONS = 3; // How many times to they split before dying?
 ASTEROID_CHILDREN = 2; // How many does each death create?
 ASTEROID_SPEED = 3;
@@ -47,6 +48,8 @@ var Asteroids = function(home) {
     this.listen = Asteroids.listen(this);
 
     // Useful functions.
+    this.asteroids = [];
+    this.level = Asteroids.level(this);
     this.gameOver = Asteroids.gameOver(this);
 
     // Play the game.
@@ -55,19 +58,24 @@ var Asteroids = function(home) {
 }
 
 Asteroids.infoPane = function(game, home) {
-    pane = document.createElement('div');
+    var pane = document.createElement('div');
     pane.innerHTML = 'ASTEROIDS';
 
-    lives = document.createElement('span');
+    var lives = document.createElement('span');
     lives.className = 'lives';
     lives.innerHTML = 'LIVES: ' + PLAYER_LIVES;
 
-    score = document.createElement('span');
+    var score = document.createElement('span');
     score.className = 'score';
     score.innerHTML = 'SCORE: 0';
 
+    var level = document.createElement('span');
+    level.className = 'level';
+    level.innerHTML = 'LEVEL: 1';
+
     pane.appendChild(lives);
     pane.appendChild(score);
+    pane.appendChild(level);
     home.appendChild(pane);
 
     return {
@@ -77,6 +85,9 @@ Asteroids.infoPane = function(game, home) {
         setScore: function(game, s) {
             score.innerHTML = 'SCORE: ' + s;
         },
+        setLevel: function(game, _level) {
+            level.innerHTML = 'LEVEL: ' + _level;
+        },
         getPane: function() {
             return pane;
         }
@@ -84,7 +95,7 @@ Asteroids.infoPane = function(game, home) {
 }
 
 Asteroids.playfield = function(game, home) {
-    canvas = document.createElement('canvas');
+    var canvas = document.createElement('canvas');
     canvas.width = GAME_WIDTH;
     canvas.height = GAME_HEIGHT;
     home.appendChild(canvas);
@@ -195,13 +206,17 @@ Asteroids.player = function(game) {
             Asteroids.move(position, velocity);
         },
         draw: function(ctx) {
-            Asteroids.drawPath(ctx, position, direction, path);
+            Asteroids.drawPath(ctx, position, direction, 1, path);
         },
         isDead: function() {
             return dead;
         },
+        extraLife: function(game) {
+            game.log.debug('Woo, extra life!');
+            lives++;
+        },
         die: function(game) {
-            if (!this.isDead()) {
+            if (!dead) {
                 game.log.debug('You died!');
                 dead = true;
                 lives--;
@@ -221,19 +236,21 @@ Asteroids.player = function(game) {
             }
         },
         ressurrect: function(game) {
-            if (this.isDead()) {
+            if (dead) {
                 dead = false;
                 game.log.debug('You ressurrected!');
             }
         },
         fire: function(game) {
-            game.log.debug('You fired!');
-            var _pos = [position[0], position[1]],
-                _dir = direction;
+            if (!dead) {
+                game.log.debug('You fired!');
+                var _pos = [position[0], position[1]],
+                    _dir = direction;
 
-            this.lowerScore(POINTS_PER_SHOT);
+                this.lowerScore(POINTS_PER_SHOT);
 
-            return Asteroids.bullet(game, _pos, _dir);
+                return Asteroids.bullet(game, _pos, _dir);
+            }
         }
     }
 }
@@ -273,7 +290,7 @@ Asteroids.bullet = function(game, _pos, _dir) {
             Asteroids.move(position, velocity);
         },
         draw: function(ctx) {
-            Asteroids.drawPath(ctx, position, direction, path);
+            Asteroids.drawPath(ctx, position, direction, 1, path);
         },
     }
 }
@@ -420,6 +437,30 @@ Asteroids.collision = function (a, b) {
     return false;
 }
 
+Asteroids.level = function(game) {
+    var level = 0,
+        speed = ASTEROID_SPEED,
+        hspeed = ASTEROID_SPEED/2;
+
+    return {
+        getLevel: function() {
+            return level;
+        },
+        levelUp: function(game) {
+            level++;
+            game.log.debug('Congrats! On to level ' + level);
+            while (game.asteroids.length < level+ASTEROID_COUNT) {
+                var a = Asteroids.asteroid(game, ASTEROID_GENERATIONS);
+                a.setPosition([Math.random() * GAME_WIDTH,
+                               Math.random() * GAME_HEIGHT]);
+                a.setVelocity([Math.random() * speed - hspeed,
+                               Math.random() * speed - hspeed]);
+                game.asteroids.push(a);
+            }
+        },
+    }
+}
+
 Asteroids.gameOver = function (game) {
 
     return function () {
@@ -433,10 +474,10 @@ Asteroids.gameOver = function (game) {
     }
 }
 
-Asteroids.drawPath = function (ctx, position, direction, path) {
+Asteroids.drawPath = function (ctx, position, direction, scale, path) {
     with (Math) {
-        ctx.setTransform(cos(direction), sin(direction),
-                         -sin(direction), cos(direction),
+        ctx.setTransform(cos(direction) * scale, sin(direction) * scale,
+                         -sin(direction) * scale, cos(direction) * scale,
                          position[0], position[1]);
     }
     ctx.beginPath();
@@ -467,24 +508,19 @@ Asteroids.play = function (game) {
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'white';
 
-    var asteroids = [];
     var speed = ASTEROID_SPEED,
         hspeed = ASTEROID_SPEED/2;
-    for (i=0; i<ASTEROID_COUNT; i++) {
-        var a = Asteroids.asteroid(game, ASTEROID_GENERATIONS);
-        a.setPosition([Math.random() * GAME_WIDTH,
-                       Math.random() * GAME_HEIGHT]);
-        a.setVelocity([Math.random() * speed - hspeed,
-                       Math.random() * speed - hspeed]);
-        asteroids.push(a);
-    }
+
+    game.level.levelUp(game);
 
     var bullets = [],
-        last_fire_state = false;
+        last_fire_state = false,
+        last_asteroid_count = 0;
 
     game.pulse = setInterval(function(){
         var kill_asteroids = [],
-            new_asteroids = [];
+            new_asteroids = [],
+            kill_bullets = [];
 
         ctx.save();
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -515,9 +551,12 @@ Asteroids.play = function (game) {
             game.player.draw(ctx);
         }
 
-        for (k=0; k<bullets.length; k++) {
+        for (var k=0; k<bullets.length; k++) {
+            if (!bullets[k])
+                continue;
+
             if (bullets[k].getAge() > MAX_BULLET_AGE) {
-                bullets.splice(k, 1);
+                kill_bullets.push(k);
                 continue;
             }
             bullets[k].birthday();
@@ -525,14 +564,20 @@ Asteroids.play = function (game) {
             bullets[k].draw(ctx);
         }
 
-        for (i=0; i<asteroids.length; i++) {
+        for (var r=kill_bullets.length-1; r>=0; r--) {
+            bullets.splice(r, 1);
+        }
+
+        for (var i=0; i<game.asteroids.length; i++) {
             var killit = false;
-            asteroids[i].move();
-            asteroids[i].draw(ctx);
+            game.asteroids[i].move();
+            game.asteroids[i].draw(ctx);
 
             // Destroy the asteroid
-            for (j=0; j<bullets.length; j++) {
-                if (Asteroids.collision(bullets[j], asteroids[i])) {
+            for (var j=0; j<bullets.length; j++) {
+                if (!bullets[j])
+                    continue;
+                if (Asteroids.collision(bullets[j], game.asteroids[i])) {
                     game.log.debug('You shot an asteroid!');
                     // Destroy the bullet.
                     bullets.splice(j, 1);
@@ -543,7 +588,7 @@ Asteroids.play = function (game) {
 
             // Kill the asteroid?
             if (killit) {
-                var _gen = asteroids[i].getGeneration() - 1;
+                var _gen = game.asteroids[i].getGeneration() - 1;
                 if (_gen > 0) {
                     // Create children ;)
                     for (var n=0; n<ASTEROID_CHILDREN; n++) {
@@ -570,18 +615,29 @@ Asteroids.play = function (game) {
 
         kill_asteroids.sort(function(a, b) { return a - b; });
         for (var m=kill_asteroids.length-1; m>=0; m--) {
-            asteroids.splice(kill_asteroids[m], 1);
+            game.asteroids.splice(kill_asteroids[m], 1);
         }
 
         for (var o=0; o<new_asteroids.length; o++) {
-            asteroids.push(new_asteroids[o]);
+            game.asteroids.push(new_asteroids[o]);
         }
 
         ctx.restore();
 
+        // Do we need to level up?
+        if (0 == game.asteroids.length && 
+            last_asteroid_count != 0) {
+            setTimeout(function() {
+                game.level.levelUp(game);
+            }, LEVEL_TIMEOUT);
+        }
+
+        last_asteroid_count = game.asteroids.length;
+
         // Update the info pane.
         game.info.setLives(game, game.player.getLives());
         game.info.setScore(game, game.player.getScore());
+        game.info.setLevel(game, game.level.getLevel());
     }, FRAME_PERIOD);
 }
 
