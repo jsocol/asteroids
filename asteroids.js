@@ -175,6 +175,9 @@ Asteroids.asteroids = function(game) {
     }
 }
 
+/**
+ * Creates an overlays controller.
+ */
 Asteroids.overlays = function(game) {
     var overlays = [];
 
@@ -203,7 +206,11 @@ Asteroids.overlays = function(game) {
     }
 }
 
+/**
+ * Creates a player object.
+ */
 Asteroids.player = function(game) {
+    // implements IScreenObject
     var position = [GAME_WIDTH/2, GAME_HEIGHT/2],
         velocity = [0, 0],
         direction = -Math.PI/2,
@@ -211,6 +218,7 @@ Asteroids.player = function(game) {
         invincible = false,
         lives = PLAYER_LIVES,
         score = 0,
+        radius = 3,
         path = [
             [10, 0],
             [-5, 5],
@@ -232,6 +240,9 @@ Asteroids.player = function(game) {
         },
         getDirection: function() {
             return direction;
+        },
+        getRadius: function() {
+            return radius;
         },
         getScore: function() {
             return score;
@@ -329,10 +340,12 @@ Asteroids.player = function(game) {
 }
 
 Asteroids.bullet = function(game, _pos, _dir) {
+    // implements IScreenObject
     var position = [_pos[0], _pos[1]],
         velocity = [0, 0],
         direction = _dir,
         age = 0,
+        radius = 1,
         path = [
             [0, 0],
             [-4, 0],
@@ -352,6 +365,9 @@ Asteroids.bullet = function(game, _pos, _dir) {
             with (Math) {
                 return sqrt(pow(velocity[0], 2) + pow(velocity[1], 2));
             }
+        },
+        getRadius: function() {
+            return radius;
         },
         getAge: function() {
             return age;
@@ -424,6 +440,7 @@ Asteroids.listen = function(game) {
 }
 
 Asteroids.asteroid = function (game, _gen) {
+    // implements IScreenObject
     var position = [0, 0],
         velocity = [0, 0],
         generation = _gen,
@@ -469,19 +486,7 @@ Asteroids.asteroid = function (game, _gen) {
             return generation;
         },
         move: function() {
-            position[0] += velocity[0];
-            if (position[0] < 0)
-                position[0] = GAME_WIDTH + position[0];
-            else if (position[0] > GAME_WIDTH)
-                position[0] -= GAME_WIDTH;
-
-            position[1] += velocity[1];
-            if (position[1] < 0)
-                position[1] = GAME_HEIGHT + position[1];
-            else if (position[1] > GAME_HEIGHT)
-                position[1] -= GAME_HEIGHT;
-
-            game.log.info(position);
+            Asteroids.move(position, velocity);
         },
         draw: function(ctx) {
             ctx.setTransform(1, 0, 0, 1, position[0], position[1]);
@@ -505,7 +510,7 @@ Asteroids.collision = function (a, b) {
     var distance = Math.sqrt(sq(a_pos[0] - b_pos[0]) +
                              sq(a_pos[1] - b_pos[1]));
 
-    if (distance <= b.getRadius())
+    if (distance <= a.getRadius() + b.getRadius())
         return true;
     return false;
 }
@@ -545,6 +550,7 @@ Asteroids.gameOver = function (game) {
         }
 
         game.overlays.add({
+            // implements IOverlay
             draw: function (ctx) {
                 ctx.font = '30px System, monospace';
                 ctx.textAlign = 'center';

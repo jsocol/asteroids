@@ -5,11 +5,12 @@
 
 body {
     background-color: #000;
+    color: #fff;
+    font-family: "Calibri", "System", monospace;
+    font-size: 14px;
 }
 
 div#asteroids {
-    background-color: #000;
-    color: #fff;
     margin: 50px auto;
     width: 640px;
     border: 1px solid #fff;
@@ -22,7 +23,7 @@ div#asteroids > * {
 
 div#asteroids > div {
     font-family: "System", monospace;
-    font-size: 10px;
+    font-size: 11px;
     padding-bottom: 5px;
 }
 
@@ -31,3 +32,15 @@ div#asteroids > div > span {
     padding-left: 20px;
 }
 
+div#instructions {
+    width: 640px;
+    margin: 20px auto;
+}
+
+h1 {
+    font-size: 18px;
+}
+
+h2 {
+    font-size: 16px;
+}
