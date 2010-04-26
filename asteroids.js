@@ -15,6 +15,7 @@ THRUST_ACCEL = 1;
 DEATH_TIMEOUT = 2000; // milliseconds
 PLAYER_LIVES = 3;
 POINTS_PER_SHOT = 1; // How many points does a shot cost? (Should be >= 0.)
+POINTS_TO_EXTRA_LIFE = 500; // How many points to get a 1-up?
 
 // Bullet settings
 BULLET_SPEED = 20;
@@ -48,7 +49,7 @@ var Asteroids = function(home) {
     this.listen = Asteroids.listen(this);
 
     // Useful functions.
-    this.asteroids = [];
+    this.asteroids = Asteroids.asteroids(this);
     this.level = Asteroids.level(this);
     this.gameOver = Asteroids.gameOver(this);
 
@@ -135,6 +136,36 @@ Asteroids.logger = function(game) {
             warning: function(msg){},
             error: function(msg){},
             critical: function(msg){},
+        }
+    }
+}
+
+Asteroids.asteroids = function(game) {
+    var asteroids = [];
+
+    return {
+        push: function(obj) {
+            return asteroids.push(obj);
+        },
+        pop: function() {
+            return asteroids.pop();
+        },
+        splice: function(i, j) {
+            return asteroids.splice(i, j);
+        },
+        get length() {
+            return asteroids.length;
+        },
+        getIterator: function() {
+            return asteroids;
+        },
+        generationCount: function(_gen) {
+            var total = 0;
+            for (var i=0; i<asteroids.length; i++) {
+                if (asteroids[i].getGeneration() == _gen)
+                    total++;
+            }
+            return total;
         }
     }
 }
@@ -517,6 +548,8 @@ Asteroids.play = function (game) {
         last_fire_state = false,
         last_asteroid_count = 0;
 
+    var extra_lives = 0;
+
     game.pulse = setInterval(function(){
         var kill_asteroids = [],
             new_asteroids = [],
@@ -524,6 +557,14 @@ Asteroids.play = function (game) {
 
         ctx.save();
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+        // Be nice and award extra lives first.
+        var t_extra_lives = game.player.getScore() / POINTS_TO_EXTRA_LIFE;
+        t_extra_lives = Math.round(t_extra_lives, 0);
+        if (t_extra_lives > extra_lives) {
+            game.player.extraLife(game);
+        }
+        extra_lives = t_extra_lives;
 
         if (game.keyState.getState(Asteroids.UP)) {
             game.player.thrust(THRUST_ACCEL);
@@ -568,16 +609,17 @@ Asteroids.play = function (game) {
             bullets.splice(r, 1);
         }
 
+        var asteroids = game.asteroids.getIterator();
         for (var i=0; i<game.asteroids.length; i++) {
             var killit = false;
-            game.asteroids[i].move();
-            game.asteroids[i].draw(ctx);
+            asteroids[i].move();
+            asteroids[i].draw(ctx);
 
             // Destroy the asteroid
             for (var j=0; j<bullets.length; j++) {
                 if (!bullets[j])
                     continue;
-                if (Asteroids.collision(bullets[j], game.asteroids[i])) {
+                if (Asteroids.collision(bullets[j], asteroids[i])) {
                     game.log.debug('You shot an asteroid!');
                     // Destroy the bullet.
                     bullets.splice(j, 1);
@@ -588,7 +630,7 @@ Asteroids.play = function (game) {
 
             // Kill the asteroid?
             if (killit) {
-                var _gen = game.asteroids[i].getGeneration() - 1;
+                var _gen = asteroids[i].getGeneration() - 1;
                 if (_gen > 0) {
                     // Create children ;)
                     for (var n=0; n<ASTEROID_CHILDREN; n++) {
