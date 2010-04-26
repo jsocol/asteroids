@@ -165,6 +165,8 @@ Asteroids.asteroids = function(game) {
                 if (asteroids[i].getGeneration() == _gen)
                     total++;
             }
+            game.log.debug('Found ' + total + ' asteroids in generation ' +
+                           _gen);
             return total;
         }
     }
@@ -480,7 +482,8 @@ Asteroids.level = function(game) {
         levelUp: function(game) {
             level++;
             game.log.debug('Congrats! On to level ' + level);
-            while (game.asteroids.length < level+ASTEROID_COUNT) {
+            while (game.asteroids.generationCount(ASTEROID_GENERATIONS) <
+                   level+ASTEROID_COUNT) {
                 var a = Asteroids.asteroid(game, ASTEROID_GENERATIONS);
                 a.setPosition([Math.random() * GAME_WIDTH,
                                Math.random() * GAME_HEIGHT]);
@@ -560,7 +563,7 @@ Asteroids.play = function (game) {
 
         // Be nice and award extra lives first.
         var t_extra_lives = game.player.getScore() / POINTS_TO_EXTRA_LIFE;
-        t_extra_lives = Math.round(t_extra_lives, 0);
+        t_extra_lives = Math.floor(t_extra_lives);
         if (t_extra_lives > extra_lives) {
             game.player.extraLife(game);
         }
