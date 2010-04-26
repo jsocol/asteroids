@@ -51,6 +51,7 @@ var Asteroids = function(home) {
 
     // Useful functions.
     this.asteroids = Asteroids.asteroids(this);
+    this.overlays = Asteroids.overlays(this);
     this.level = Asteroids.level(this);
     this.gameOver = Asteroids.gameOver(this);
 
@@ -169,6 +170,34 @@ Asteroids.asteroids = function(game) {
             game.log.debug('Found ' + total + ' asteroids in generation ' +
                            _gen);
             return total;
+        }
+    }
+}
+
+Asteroids.overlays = function(game) {
+    var overlays = [];
+
+    return {
+        draw: function(ctx) {
+            for (var i=0; i<overlays.length; i++) {
+                overlays[i].draw(ctx);
+            }
+        },
+        add: function(obj) {
+            if (-1 == overlays.indexOf(obj) &&
+                typeof obj.draw != 'undefined') {
+                overlays.push(obj);
+                return true;
+            }
+            return false;
+        },
+        remove: function(obj) {
+            var i = overlays.indexOf(obj);
+            if (-1 != i) {
+                overlays.splice(i, 1);
+                return true;
+            }
+            return false;
         }
     }
 }
@@ -510,11 +539,15 @@ Asteroids.gameOver = function (game) {
     return function () {
         game.log.debug('Game over!');
 
-        clearInterval(game.pulse);
-
-        var ctx = game.playfield.getContext('2d');
-        ctx.fillStyle = 'white';
-        ctx.fillText('GAME OVER', GAME_WIDTH/2, GAME_HEIGHT/2);
+        game.overlays.add({
+            draw: function (ctx) {
+                ctx.font = '30px System, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.fillText('GAME OVER', GAME_WIDTH/2, GAME_HEIGHT/2);
+            },
+        });
     }
 }
 
@@ -689,6 +722,9 @@ Asteroids.play = function (game) {
         }
 
         last_asteroid_count = game.asteroids.length;
+
+        // Draw overlays.
+        game.overlays.draw(ctx);
 
         // Update the info pane.
         game.info.setLives(game, game.player.getLives());
