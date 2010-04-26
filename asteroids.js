@@ -13,6 +13,7 @@ ROTATE_SPEED = Math.PI/10; // How fast do players turn?  (radians)
 MAX_SPEED = 15; // Maximum player speed
 THRUST_ACCEL = 1;
 DEATH_TIMEOUT = 2000; // milliseconds
+INVINCIBLE_TIMEOUT = 1000; // How long to stay invincible after resurrecting?
 PLAYER_LIVES = 3;
 POINTS_PER_SHOT = 1; // How many points does a shot cost? (Should be >= 0.)
 POINTS_TO_EXTRA_LIFE = 500; // How many points to get a 1-up?
@@ -177,6 +178,7 @@ Asteroids.player = function(game) {
         velocity = [0, 0],
         direction = -Math.PI/2,
         dead = false,
+        invincible = false,
         lives = PLAYER_LIVES,
         score = 0,
         path = [
@@ -244,6 +246,9 @@ Asteroids.player = function(game) {
         isDead: function() {
             return dead;
         },
+        isInvincible: function() {
+            return invincible;
+        },
         extraLife: function(game) {
             game.log.debug('Woo, extra life!');
             lives++;
@@ -252,6 +257,7 @@ Asteroids.player = function(game) {
             if (!dead) {
                 game.log.debug('You died!');
                 dead = true;
+                invincible = true;
                 lives--;
                 position = [GAME_WIDTH/2, GAME_HEIGHT/2];
                 velocity = [0, 0];
@@ -271,6 +277,10 @@ Asteroids.player = function(game) {
         ressurrect: function(game) {
             if (dead) {
                 dead = false;
+                setTimeout(function () {
+                    invincible = false;
+                    game.log.debug('No longer invincible!');
+                }, INVINCIBLE_TIMEOUT);
                 game.log.debug('You ressurrected!');
             }
         },
@@ -653,6 +663,7 @@ Asteroids.play = function (game) {
 
             // Kill the player?
             if (!game.player.isDead() &&
+                !game.player.isInvincible() &&
                 Asteroids.collision(game.player, asteroids[i])) {
                 game.player.die(game);
             }
