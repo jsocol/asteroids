@@ -625,6 +625,22 @@ Asteroids.move = function (position, velocity) {
         position[1] -= GAME_HEIGHT;
 }
 
+Asteroids.stars = function () {
+    var stars = [];
+    for (var i=0; i<50; i++) {
+        stars.push([Math.random()*GAME_WIDTH, Math.random()*GAME_HEIGHT]);
+    }
+
+    return {
+        draw: function(ctx) {
+            var ii = stars.length;
+            for(var i=0; i<ii; i++) {
+                ctx.fillRect(stars[i][0], stars[i][1], 1, 1);
+            }
+        }
+    }
+}
+
 Asteroids.play = function (game) {
     var ctx = game.playfield.getContext('2d');
     ctx.fillStyle = 'white';
@@ -640,6 +656,9 @@ Asteroids.play = function (game) {
         last_asteroid_count = 0;
 
     var extra_lives = 0;
+
+    // Add a star field.
+    game.overlays.add(Asteroids.stars());
 
     game.pulse = setInterval(function(){
         var kill_asteroids = [],
