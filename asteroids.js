@@ -573,10 +573,7 @@ Asteroids.highScores = function (game) {
     var scores = [];
 
     if (t = localStorage.getItem('high-scores')) {
-        scores = t.split(';;').map(function(s) {
-            var _s = s.split(';');
-            return {name: _s[0], score: _s[1]};
-        });
+        scores = JSON.parse(t);
     }
     
     return {
@@ -590,7 +587,7 @@ Asteroids.highScores = function (game) {
                 scores.length = 10;
             }
             game.log.debug('Saving high scores.');
-            var str = [x.name+';'+x.score for each (x in scores)].join(';;')
+            var str = JSON.stringify(scores);
             localStorage.setItem('high-scores', str);
         },
     }
