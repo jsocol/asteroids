@@ -235,9 +235,7 @@ Asteroids.player = function(game) {
             return velocity;
         },
         getSpeed: function() {
-            with (Math) {
-                return sqrt(pow(velocity[0], 2) + pow(velocity[1], 2));
-            }
+            return Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
         },
         getDirection: function() {
             return direction;
@@ -371,9 +369,7 @@ Asteroids.bullet = function(game, _pos, _dir) {
             return velocity;
         },
         getSpeed: function() {
-            with (Math) {
-                return sqrt(pow(velocity[0], 2) + pow(velocity[1], 2));
-            }
+            return Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
         },
         getRadius: function() {
             return radius;
@@ -487,9 +483,7 @@ Asteroids.asteroid = function (game, _gen) {
             velocity = vel;
         },
         getSpeed: function() {
-            with (Math) {
-                return sqrt(pow(velocity[0], 2) + pow(velocity[1], 2));
-            }
+            return Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
         },
         getRadius: function() {
             return radius * generation;
