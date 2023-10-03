@@ -13,10 +13,10 @@ ROTATE_SPEED = Math.PI/10; // How fast do players turn?  (radians)
 MAX_SPEED = 15; // Maximum player speed
 THRUST_ACCEL = 1;
 DEATH_TIMEOUT = 2000; // milliseconds
-INVINCIBLE_TIMEOUT = 1000; // How long to stay invincible after resurrecting?
+INVINCIBLE_TIMEOUT = 1500; // How long to stay invincible after resurrecting?
 PLAYER_LIVES = 3;
 POINTS_PER_SHOT = 1; // How many points does a shot cost? (Should be >= 0.)
-POINTS_TO_EXTRA_LIFE = 500; // How many points to get a 1-up?
+POINTS_TO_EXTRA_LIFE = 1000; // How many points to get a 1-up?
 
 // Bullet settings
 BULLET_SPEED = 20;
@@ -216,6 +216,7 @@ Asteroids.player = function(game) {
         direction = -Math.PI/2,
         dead = false,
         invincible = false,
+        lastRez = null,
         lives = PLAYER_LIVES,
         score = 0,
         radius = 3,
@@ -282,7 +283,13 @@ Asteroids.player = function(game) {
             Asteroids.move(position, velocity);
         },
         draw: function(ctx) {
-            Asteroids.drawPath(ctx, position, direction, 1, path);
+            let color = '#fff';
+            if (invincible) {
+                const dt = ((new Date) - lastRez) / 200;
+                const c = Math.floor(Math.cos(dt) * 16).toString(16);
+                color = `#${c}${c}${c}`;
+            }
+            Asteroids.drawPath(ctx, position, direction, 1, path, color);
         },
         isDead: function() {
             return dead;
@@ -306,7 +313,7 @@ Asteroids.player = function(game) {
                 if (lives > 0) {
                     setTimeout(function (player, _game) {
                         return function() {
-                            player.ressurrect(_game);
+                            player.resurrect(_game);
                         }
                     }(this, game), DEATH_TIMEOUT);
                 }
@@ -315,10 +322,11 @@ Asteroids.player = function(game) {
                 }
             }
         },
-        ressurrect: function(game) {
+        resurrect: function(game) {
             if (dead) {
                 dead = false;
                 invincible = true;
+                lastRez = new Date;
                 setTimeout(function () {
                     invincible = false;
                     game.log.debug('No longer invincible!');
@@ -597,12 +605,15 @@ Asteroids.highScores = function (game) {
     }
 }
 
-Asteroids.drawPath = function (ctx, position, direction, scale, path) {
-    with (Math) {
-        ctx.setTransform(cos(direction) * scale, sin(direction) * scale,
-                         -sin(direction) * scale, cos(direction) * scale,
-                         position[0], position[1]);
+Asteroids.drawPath = function (ctx, position, direction, scale, path, color) {
+    if (!color) {
+        color = '#fff';
     }
+    ctx.strokeStyle = color;
+    ctx.setTransform(Math.cos(direction) * scale, Math.sin(direction) * scale,
+                     -Math.sin(direction) * scale, Math.cos(direction) * scale,
+                     position[0], position[1]);
+
     ctx.beginPath();
     ctx.moveTo(path[0][0], path[0][1]);
     for (i=1; i<path.length; i++) {
@@ -610,6 +621,7 @@ Asteroids.drawPath = function (ctx, position, direction, scale, path) {
     }
     ctx.stroke();
     ctx.closePath();
+    ctx.strokeStyle = '#fff';
 }
 
 Asteroids.move = function (position, velocity) {
