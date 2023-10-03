@@ -385,13 +385,14 @@ Asteroids.bullet = function(game, _pos, _dir) {
     }
 }
 
-Asteroids.keyState = function(game) {
-    var state = [];
-    state[Asteroids.LEFT] = false;
-    state[Asteroids.UP] = false;
-    state[Asteroids.RIGHT] = false;
-    state[Asteroids.DOWN] = false;
-    state[Asteroids.SPACE] = false;
+Asteroids.keyState = function(_) {
+    var state = {
+        [Asteroids.LEFT]: false,
+        [Asteroids.UP]: false,
+        [Asteroids.RIGHT]: false,
+        [Asteroids.DOWN]: false,
+        [Asteroids.FIRE]: false
+    };
 
     return {
         on: function(key) {
@@ -409,32 +410,34 @@ Asteroids.keyState = function(game) {
 }
 
 Asteroids.listen = function(game) {
+    const keyMap = {
+        "ArrowLeft": Asteroids.LEFT,
+        "KeyA": Asteroids.LEFT,
+        "ArrowRight": Asteroids.RIGHT,
+        "KeyD": Asteroids.RIGHT,
+        "ArrowUp": Asteroids.UP,
+        "KeyW": Asteroids.UP,
+        "Space": Asteroids.FIRE
+    };
+
     window.addEventListener('keydown', function(e) {
-        switch (e.which) {
-            case Asteroids.UP:
-            case Asteroids.LEFT:
-            case Asteroids.RIGHT:
-            case Asteroids.DOWN:
-            case Asteroids.SPACE:
-                e.preventDefault();
-                e.stopPropagation();
-                game.keyState.on(e.which)
-                return false;
+        const state = keyMap[e.code];
+        if (state) {
+            e.preventDefault();
+            e.stopPropagation();
+            game.keyState.on(state);
+            return false;
         }
         return true;
     }, true);
 
     window.addEventListener('keyup', function(e) {
-        switch (e.which) {
-            case Asteroids.UP:
-            case Asteroids.LEFT:
-            case Asteroids.RIGHT:
-            case Asteroids.DOWN:
-            case Asteroids.SPACE:
-                e.preventDefault();
-                e.stopPropagation();
-                game.keyState.off(e.which)
-                return false;
+        const state = keyMap[e.code];
+        if (state) {
+            e.preventDefault();
+            e.stopPropagation();
+            game.keyState.off(state);
+            return false;
         }
         return true;
     }, true);
@@ -686,7 +689,7 @@ Asteroids.play = function (game) {
             game.player.rotate(ROTATE_SPEED);
         }
 
-        var fire_state = game.keyState.getState(Asteroids.SPACE);
+        var fire_state = game.keyState.getState(Asteroids.FIRE);
         if (fire_state &&
             (fire_state != last_fire_state) &&
             (bullets.length < MAX_BULLETS)) {
@@ -808,7 +811,7 @@ Asteroids.LEFT = 37;
 Asteroids.UP = 38;
 Asteroids.RIGHT = 39;
 Asteroids.DOWN = 40;
-Asteroids.SPACE = 32;
+Asteroids.FIRE = 32;
 
 // Load it up!
 window.onload = Asteroids(document.getElementById('asteroids'));
