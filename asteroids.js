@@ -451,6 +451,7 @@ Asteroids.asteroid = function (game, _gen) {
     // implements IScreenObject
     var position = [0, 0],
         velocity = [0, 0],
+        direction = 0,
         generation = _gen,
         radius = 7,
         path = [
@@ -481,6 +482,7 @@ Asteroids.asteroid = function (game, _gen) {
         },
         setVelocity: function(vel) {
             velocity = vel;
+            direction = Math.atan2(vel[1], vel[0]);
         },
         getSpeed: function() {
             return Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
@@ -495,11 +497,12 @@ Asteroids.asteroid = function (game, _gen) {
             Asteroids.move(position, velocity);
         },
         draw: function(ctx) {
-            ctx.setTransform(1, 0, 0, 1, position[0], position[1]);
-            ctx.beginPath();
-            ctx.arc(0, 0, radius*generation, 0, Math.PI*2, false);
-            ctx.stroke();
-            ctx.closePath();
+            Asteroids.drawPath(ctx, position, direction, generation, path);
+            // ctx.setTransform(1, 0, 0, 1, position[0], position[1]);
+            // ctx.beginPath();
+            // ctx.arc(0, 0, radius*generation, 0, Math.PI*2, false);
+            // ctx.stroke();
+            // ctx.closePath();
         }
     }
 }
