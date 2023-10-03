@@ -296,7 +296,7 @@ Asteroids.player = function(game) {
         },
         die: function(game) {
             if (!dead) {
-                game.log.debug('You died!');
+                game.log.info('You died!');
                 dead = true;
                 invincible = true;
                 lives--;
@@ -318,6 +318,7 @@ Asteroids.player = function(game) {
         ressurrect: function(game) {
             if (dead) {
                 dead = false;
+                invincible = true;
                 setTimeout(function () {
                     invincible = false;
                     game.log.debug('No longer invincible!');
