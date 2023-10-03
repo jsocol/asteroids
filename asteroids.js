@@ -1,5 +1,5 @@
 // Asteroids.js
-// Copyright (c) 2010–2019 James Socol <me@jamessocol.com>
+// Copyright (c) 2010–2023 James Socol <me@jamessocol.com>
 // See LICENSE.txt for license terms.
 
 // Game settings
